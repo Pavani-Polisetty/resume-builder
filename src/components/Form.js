@@ -1,11 +1,17 @@
-function FormSteps({ step, setStep, data, setData }) {
+import { FiTrash2 } from "react-icons/fi"; // ← IMPORT HERE
+function FormSteps({ step, setStep, data, setData, steps }) {
   const next = () => setStep(step + 1);
   const back = () => setStep(step - 1);
+  const isCustomSectionAdded = steps?.some((s) => s.custom);
+  // const customStepsCount = steps?.filter((s) => s.custom).length || 0;
 
+  // const enableCustomNext = customStepsCount > 1;
+  const hasNextStep = step < steps.length;
+  // );
   return (
     <div className="form-card">
       {step === 1 && (
-        <>
+        <div className="contact-form">
           <h3>Contact Information</h3>
 
           <input
@@ -37,25 +43,35 @@ function FormSteps({ step, setStep, data, setData }) {
             value={data.github}
             onChange={(e) => setData({ ...data, github: e.target.value })}
           />
-
-          <button onClick={next}>Next</button>
-        </>
+          <div className="form-buttons">
+            <button className="next-btn" onClick={next}>
+              Next &rarr;
+            </button>
+          </div>
+        </div>
       )}
 
       {step === 2 && (
-        <>
+        <div className="summary-form">
           <h3>Professional Summary</h3>
           <textarea
             value={data.summary}
             onChange={(e) => setData({ ...data, summary: e.target.value })}
           />
-          <button onClick={back}>Back</button>
-          <button onClick={next}>Next</button>
-        </>
+          <div className="form-buttons">
+            <button className="back-btn" onClick={back}>
+              &larr; Previous
+            </button>
+
+            <button className="next-btn" onClick={next}>
+              Next &rarr;
+            </button>
+          </div>
+        </div>
       )}
 
       {step === 3 && (
-        <>
+        <div className="skills-form">
           <h3>Skills</h3>
 
           {data.skills.map((skill, index) => (
@@ -69,7 +85,6 @@ function FormSteps({ step, setStep, data, setData }) {
                   setData({ ...data, skills: newSkills });
                 }}
               />
-
               <textarea
                 value={skill.skills}
                 placeholder="Skills"
@@ -79,19 +94,19 @@ function FormSteps({ step, setStep, data, setData }) {
                   setData({ ...data, skills: newSkills });
                 }}
               />
-
               <button
-                type="button"
+                className="remove-btn"
                 onClick={() => {
                   const newSkills = data.skills.filter((_, i) => i !== index);
                   setData({ ...data, skills: newSkills });
                 }}
               >
-                Remove
-              </button>
+                <FiTrash2 />
+              </button>{" "}
             </div>
           ))}
           <button
+            className="add"
             onClick={() =>
               setData({
                 ...data,
@@ -99,14 +114,24 @@ function FormSteps({ step, setStep, data, setData }) {
               })
             }
           >
+            <span className="plus-circle">+</span>
             Add Skill Category
           </button>
-          <button onClick={back}>Back</button>
-          <button onClick={next}>Next</button>
-        </>
+          <div>
+            <div className="form-buttons">
+              <button className="back-btn" onClick={back}>
+                &larr; Previous
+              </button>
+
+              <button className="next-btn" onClick={next}>
+                Next &rarr;
+              </button>
+            </div>
+          </div>
+        </div>
       )}
       {step === 4 && (
-        <>
+        <div className="experience-form">
           <h3>Professional Experience</h3>
 
           {data.experience?.map((exp, index) => (
@@ -120,7 +145,6 @@ function FormSteps({ step, setStep, data, setData }) {
                   setData({ ...data, experience: arr });
                 }}
               />
-
               <input
                 value={exp.role}
                 placeholder="Role / Position"
@@ -130,7 +154,6 @@ function FormSteps({ step, setStep, data, setData }) {
                   setData({ ...data, experience: arr });
                 }}
               />
-
               <input
                 value={exp.location}
                 placeholder="Location"
@@ -140,7 +163,6 @@ function FormSteps({ step, setStep, data, setData }) {
                   setData({ ...data, experience: arr });
                 }}
               />
-
               <input
                 value={exp.duration}
                 placeholder="Duration (ex: Aug 2025 - Present)"
@@ -150,7 +172,6 @@ function FormSteps({ step, setStep, data, setData }) {
                   setData({ ...data, experience: arr });
                 }}
               />
-
               <textarea
                 value={exp.points}
                 placeholder="Experience points (comma separated)"
@@ -161,17 +182,20 @@ function FormSteps({ step, setStep, data, setData }) {
                 }}
               />
               <button
-                type="button"
+                className="remove-btn"
                 onClick={() => {
-                  const newSkills = data.skills.filter((_, i) => i !== index);
-                  setData({ ...data, skills: newSkills });
+                  const newExperience = data.experience.filter(
+                    (_, i) => i !== index,
+                  );
+                  setData({ ...data, experience: newExperience });
                 }}
               >
-                Remove
-              </button>
+                <FiTrash2 />
+              </button>{" "}
             </div>
           ))}
           <button
+            className="add"
             onClick={() =>
               setData({
                 ...data,
@@ -188,15 +212,24 @@ function FormSteps({ step, setStep, data, setData }) {
               })
             }
           >
+            <span className="plus-circle">+</span>
             Add Experience
           </button>
-          <button onClick={back}>Back</button>
-          <button onClick={next}>Next</button>
-        </>
+
+          <div className="form-buttons">
+            <button className="back-btn" onClick={back}>
+              &larr; Previous
+            </button>
+
+            <button className="next-btn" onClick={next}>
+              Next &rarr;
+            </button>
+          </div>
+        </div>
       )}
 
       {step === 5 && (
-        <>
+        <div className="education-form">
           <h3>Education</h3>
 
           {data.education.map((edu, index) => (
@@ -210,7 +243,6 @@ function FormSteps({ step, setStep, data, setData }) {
                   setData({ ...data, education: arr });
                 }}
               />
-
               <input
                 value={edu.degree}
                 placeholder="Degree / Program"
@@ -220,7 +252,6 @@ function FormSteps({ step, setStep, data, setData }) {
                   setData({ ...data, education: arr });
                 }}
               />
-
               <input
                 value={edu.year}
                 placeholder="Year / Duration"
@@ -230,7 +261,6 @@ function FormSteps({ step, setStep, data, setData }) {
                   setData({ ...data, education: arr });
                 }}
               />
-
               <input
                 value={edu.location}
                 placeholder="Location"
@@ -240,7 +270,6 @@ function FormSteps({ step, setStep, data, setData }) {
                   setData({ ...data, education: arr });
                 }}
               />
-
               <input
                 value={edu.performance}
                 placeholder="CGPA / Percentage (optional)"
@@ -250,19 +279,19 @@ function FormSteps({ step, setStep, data, setData }) {
                   setData({ ...data, education: arr });
                 }}
               />
-
               <button
-                type="button"
+                className="remove-btn"
                 onClick={() => {
                   const arr = data.education.filter((_, i) => i !== index);
                   setData({ ...data, education: arr });
                 }}
               >
-                Remove
-              </button>
+                <FiTrash2 />
+              </button>{" "}
             </div>
           ))}
           <button
+            className="add"
             onClick={() =>
               setData({
                 ...data,
@@ -279,15 +308,23 @@ function FormSteps({ step, setStep, data, setData }) {
               })
             }
           >
+            <span className="plus-circle">+</span>
             Add Qualification
           </button>
-          <button onClick={back}>Back</button>
-          <button onClick={next}>Next</button>
-        </>
+          <div className="form-buttons">
+            <button className="back-btn" onClick={back}>
+              &larr; Previous
+            </button>
+
+            <button className="next-btn" onClick={next}>
+              Next &rarr;
+            </button>
+          </div>
+        </div>
       )}
 
       {step === 6 && (
-        <>
+        <div className="projects-form">
           <h3>Projects</h3>
 
           {data.projects.map((project, index) => (
@@ -323,17 +360,19 @@ function FormSteps({ step, setStep, data, setData }) {
               />
 
               <button
+                className="remove-btn"
                 type="button"
                 onClick={() => {
                   const arr = data.projects.filter((_, i) => i !== index);
                   setData({ ...data, projects: arr });
                 }}
               >
-                Remove
+                <FiTrash2 />
               </button>
             </div>
           ))}
           <button
+            className="add"
             onClick={() =>
               setData({
                 ...data,
@@ -348,14 +387,22 @@ function FormSteps({ step, setStep, data, setData }) {
               })
             }
           >
+            <span className="plus-circle">+</span>
             Add Project
           </button>
-          <button onClick={back}>Back</button>
-          <button onClick={next}>Next</button>
-        </>
+          <div className="form-buttons">
+            <button className="back-btn" onClick={back}>
+              &larr; Previous
+            </button>
+
+            <button className="next-btn" onClick={next}>
+              Next &rarr;
+            </button>
+          </div>
+        </div>
       )}
       {step === 7 && (
-        <>
+        <div className="certifications-form">
           <h3>Certifications</h3>
 
           {data.certifications?.map((cert, index) => (
@@ -381,17 +428,19 @@ function FormSteps({ step, setStep, data, setData }) {
               />
 
               <button
+                className="remove-btn"
                 type="button"
                 onClick={() => {
                   const arr = data.certifications.filter((_, i) => i !== index);
                   setData({ ...data, certifications: arr });
                 }}
               >
-                Remove
+                <FiTrash2 />
               </button>
             </div>
           ))}
           <button
+            className="add"
             onClick={() =>
               setData({
                 ...data,
@@ -402,10 +451,84 @@ function FormSteps({ step, setStep, data, setData }) {
               })
             }
           >
+            <span className="plus-circle">+</span>
             Add Certification
           </button>
-          <button onClick={back}>Back</button>
-        </>
+          <div className="form-buttons">
+            <button className="back-btn" onClick={back}>
+              &larr; Previous
+            </button>
+
+            <button
+              className="next-btn"
+              onClick={next}
+              disabled={!isCustomSectionAdded}
+            >
+              Next &rarr;
+            </button>
+          </div>
+        </div>
+      )}
+      {steps?.[step - 1]?.custom && (
+        <div className="custom-section-form">
+          <h3>{steps?.[step - 1]?.name}</h3>
+
+          {data.customSections?.map((section, index) => (
+            <div key={index} className="card">
+              <textarea
+                placeholder="Content (comma separated)"
+                value={section.content}
+                onChange={(e) => {
+                  const arr = [...data.customSections];
+                  arr[index].content = e.target.value;
+                  setData({ ...data, customSections: arr });
+                }}
+              />
+
+              {/* ⭐ REMOVE BUTTON (same as certifications) */}
+              <button
+                className="remove-btn"
+                type="button"
+                onClick={() => {
+                  const arr = data.customSections.filter((_, i) => i !== index);
+                  setData({ ...data, customSections: arr });
+                }}
+              >
+                <FiTrash2 />
+              </button>
+            </div>
+          ))}
+
+          {/* ADD BUTTON */}
+          <button
+            className="add"
+            onClick={() =>
+              setData({
+                ...data,
+                customSections: [
+                  ...(data.customSections || []),
+                  {
+                    sectionName: steps?.[step - 1]?.name,
+                    title: "",
+                    content: "",
+                  },
+                ],
+              })
+            }
+          >
+            <span className="plus-circle">+</span>
+            Add {steps?.[step - 1]?.name}
+          </button>
+
+          <div className="form-buttons">
+            <button className="back-btn" onClick={back}>
+              &larr; Previous
+            </button>
+            <button className="next-btn" onClick={next} disabled={!hasNextStep}>
+              Next &rarr;
+            </button>
+          </div>
+        </div>
       )}
     </div>
   );

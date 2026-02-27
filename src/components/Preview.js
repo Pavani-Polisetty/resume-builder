@@ -11,6 +11,10 @@ function ResumePreview({ data }) {
   const contentRef = useRef(null);
   const [fontScale, setFontScale] = useState(1);
 
+  const validCustomSections =
+    data.customSections?.filter((s) => s.title?.trim() || s.content?.trim()) ||
+    [];
+
   useEffect(() => {
     if (contentRef.current && pageRef.current) {
       const measureContent = () => {
@@ -100,14 +104,14 @@ function ResumePreview({ data }) {
 
           {data.summary && (
             <>
-              <h3>Professional Summary</h3>
+              <h3>PROFESSIONAL SUMMARY</h3>
               <p>{data.summary}</p>
             </>
           )}
 
           {data.skills?.length > 0 && (
             <>
-              <h3>Core Competences</h3>
+              <h3>SKILLS</h3>
               {data.skills.map((s, i) => (
                 <div key={i} className="skill-row">
                   <div className="skill-category">{s.category}</div>
@@ -150,7 +154,7 @@ function ResumePreview({ data }) {
 
           {data.education?.length > 0 && (
             <>
-              <h3>Education</h3>
+              <h3>EDUCATION</h3>
               <ul className="education-list">
                 {data.education.map((e, i) => (
                   <li key={i} className="education-item">
@@ -175,7 +179,7 @@ function ResumePreview({ data }) {
 
           {data.projects?.length > 0 && (
             <>
-              <h3>Key Technical Projects</h3>
+              <h3>PROJECTS</h3>
               <ul className="projects-list">
                 {data.projects.map((p, i) => (
                   <li key={i} className="project-item">
@@ -192,7 +196,7 @@ function ResumePreview({ data }) {
 
           {data.certifications?.length > 0 && (
             <>
-              <h3>Certifications & Awards</h3>
+              <h3>CERTIFICATIONS</h3>
               <ul className="certifications-list">
                 {data.certifications.map((c, i) => (
                   <li key={i} className="certification-item">
@@ -202,6 +206,32 @@ function ResumePreview({ data }) {
               </ul>
             </>
           )}
+
+          {validCustomSections.length > 0 &&
+            [...new Set(validCustomSections.map((s) => s.sectionName))].map(
+              (sectionName, i) => (
+                <div key={i} className="resume-section">
+                  <h3>{sectionName}</h3>
+
+                  {validCustomSections
+                    .filter((s) => s.sectionName === sectionName)
+                    .map((section, index) => (
+                      <div key={index}>
+                        {section.content && (
+                          <ul>
+                            {section.content
+                              ?.split(",")
+                              .filter((item) => item.trim() !== "")
+                              .map((item, i) => (
+                                <li key={i}>{item.trim()}</li>
+                              ))}
+                          </ul>
+                        )}
+                      </div>
+                    ))}
+                </div>
+              ),
+            )}
         </div>
       </div>
     </div>

@@ -11,15 +11,18 @@ function Navbar() {
     }
 
     try {
-      // Store original styles
-      const originalPadding = element.style.padding;
-      const originalBorder = element.style.border;
-      const originalBorderRadius = element.style.borderRadius;
-      const originalMargin = element.style.margin;
-      const originalBoxShadow = element.style.boxShadow;
-      const originalBackground = element.style.background;
+      // ===== Save original styles =====
+      const originalStyles = {
+        padding: element.style.padding,
+        fontSize: element.style.fontSize,
+        border: element.style.border,
+        borderRadius: element.style.borderRadius,
+        margin: element.style.margin,
+        boxShadow: element.style.boxShadow,
+        background: element.style.background,
+      };
 
-      // Remove border, padding, and shadows for clean PDF
+      // ===== Clean PDF styling =====
       element.style.padding = "0";
       element.style.border = "none";
       element.style.borderRadius = "0";
@@ -27,73 +30,122 @@ function Navbar() {
       element.style.boxShadow = "none";
       element.style.background = "white";
 
-      // Create canvas with higher quality
+      // ===== AUTO FONT RESIZE =====
+      const targetHeight = 1120;
+
+      const computedStyle = window.getComputedStyle(element);
+      let baseFont = parseFloat(computedStyle.fontSize);
+
+      let currentHeight = element.scrollHeight;
+
+      while (currentHeight < targetHeight * 0.95) {
+        baseFont += 1;
+        element.style.fontSize = `${baseFont}px`;
+        currentHeight = element.scrollHeight;
+        if (baseFont > 24) break;
+      }
+
+      while (currentHeight > targetHeight) {
+        baseFont -= 0.5;
+        element.style.fontSize = `${baseFont}px`;
+        currentHeight = element.scrollHeight;
+        if (baseFont < 10) break;
+      }
+
+      // ===== Capture canvas =====
       const canvas = await html2canvas(element, {
         scale: 2,
         useCORS: true,
         logging: false,
       });
 
-      // Restore original styles
-      element.style.padding = originalPadding;
-      element.style.border = originalBorder;
-      element.style.borderRadius = originalBorderRadius;
-      element.style.margin = originalMargin;
-      element.style.boxShadow = originalBoxShadow;
-      element.style.background = originalBackground;
+      // ===== Restore styles =====
+      Object.assign(element.style, originalStyles);
 
-      const imgData = canvas.toDataURL("image/png");
+      // ===== IMAGE COMPRESSION =====
+      let quality = 0.8;
+      let imgData;
 
-      // A4 dimensions in mm
-      const a4Width = 210;
-      const a4Height = 297;
+      do {
+        imgData = canvas.toDataURL("image/jpeg", quality);
+        quality -= 0.1;
+      } while (imgData.length > 1000000 && quality > 0.3);
 
-      // Calculate dimensions to fit content on single A4 page
+      // ===== Create PDF =====
+      const pdf = new jsPDF("p", "mm", "a4");
+
+      const pageWidth = 210;
+      const pageHeight = 297;
+      const margin = 10;
+
+      const availableWidth = pageWidth - margin * 2;
+      const availableHeight = pageHeight - margin * 2;
+
       const canvasWidth = canvas.width;
       const canvasHeight = canvas.height;
 
-      // Calculate the scale needed to fit on A4 (with small margins)
-      const imgWidth = a4Width - 4; // 2mm margins on each side
-      const maxImgHeight = a4Height - 4; // 2mm margins
+      const scaleX = availableWidth / canvasWidth;
+      const scaleY = availableHeight / canvasHeight;
+      const scale = Math.min(scaleX, scaleY);
 
-      // Calculate proportional height
-      let imgHeight = (canvasHeight * imgWidth) / canvasWidth;
+      const imgWidth = canvasWidth * scale;
+      const imgHeight = canvasHeight * scale;
 
-      // If content exceeds A4 height, scale it down
-      let scaleFactor = 1;
-      if (imgHeight > maxImgHeight) {
-        scaleFactor = maxImgHeight / imgHeight;
-        imgHeight = maxImgHeight;
-      }
+      const x = (pageWidth - imgWidth) / 2;
+      const y = margin;
 
-      const pdf = new jsPDF("p", "mm", "a4");
+      // ===== Add image =====
+      pdf.addImage(imgData, "JPEG", x, y, imgWidth, imgHeight);
 
-      // Center horizontally and position at top
-      const xOffset = (a4Width - imgWidth * scaleFactor) / 2;
-      const yOffset = 2;
+      // ======================================================
+      // ⭐ CLICKABLE LINKS (FINAL FIX)
+      // ======================================================
+      const links = element.querySelectorAll("a");
+      const elementRect = element.getBoundingClientRect();
 
-      pdf.addImage(
-        imgData,
-        "PNG",
-        xOffset,
-        yOffset,
-        imgWidth * scaleFactor,
-        imgHeight,
-      );
+      links.forEach((link) => {
+        const rect = link.getBoundingClientRect();
+
+        // Position relative to main element
+        const linkX = rect.left - elementRect.left;
+        const linkY = rect.top - elementRect.top;
+        const linkW = rect.width;
+        const linkH = rect.height;
+
+        // HTML → PDF conversion
+        const pdfX = x + (linkX / elementRect.width) * imgWidth;
+        const pdfY = y + (linkY / elementRect.height) * imgHeight;
+        const pdfW = (linkW / elementRect.width) * imgWidth;
+        const pdfH = (linkH / elementRect.height) * imgHeight;
+
+        pdf.link(pdfX, pdfY, pdfW, pdfH, {
+          url: link.href,
+        });
+      });
+
+      // ======================================================
+      // ⭐ ATS FRIENDLY TEXT LAYER
+      // ======================================================
+      const plainText = element.innerText || "";
+
+      pdf.setFont("helvetica", "normal");
+      pdf.setFontSize(0.1);
+      pdf.setTextColor(255, 255, 255);
+
+      const lines = pdf.splitTextToSize(plainText, 180);
+      pdf.text(lines, 5, 5);
+
       pdf.save("Resume.pdf");
     } catch (error) {
-      console.error("Error generating PDF:", error);
-      alert("Error generating PDF. Please try again.");
+      console.error(error);
+      alert("Error generating PDF");
     }
   };
 
   return (
     <div className="navbar">
       <h2>Career Copilot</h2>
-
-      <div>
-        <button onClick={handleDownload}>Download</button>
-      </div>
+      <button onClick={handleDownload}>Download</button>
     </div>
   );
 }
