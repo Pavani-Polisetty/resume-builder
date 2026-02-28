@@ -82,7 +82,7 @@ function ResumePreview({ data }) {
                     target="_blank"
                     rel="noreferrer"
                   >
-                    LinkedIn
+                    Linkedin
                   </a>
                 </>
               )}

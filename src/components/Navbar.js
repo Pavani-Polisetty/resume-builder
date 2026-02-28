@@ -4,6 +4,8 @@ import jsPDF from "jspdf";
 function Navbar() {
   const handleDownload = async () => {
     const element = document.getElementById("resume-page");
+    const contentElement =
+      element?.querySelector?.('[data-resume-content="true"]') || null;
 
     if (!element) {
       alert("Resume preview not found");
@@ -14,13 +16,20 @@ function Navbar() {
       // ===== Save original styles =====
       const originalStyles = {
         padding: element.style.padding,
-        fontSize: element.style.fontSize,
         border: element.style.border,
         borderRadius: element.style.borderRadius,
         margin: element.style.margin,
         boxShadow: element.style.boxShadow,
         background: element.style.background,
       };
+
+      const originalContentStyles = contentElement
+        ? {
+            fontSize: contentElement.style.fontSize,
+            transform: contentElement.style.transform,
+            transformOrigin: contentElement.style.transformOrigin,
+          }
+        : null;
 
       // ===== Clean PDF styling =====
       element.style.padding = "0";
@@ -30,27 +39,56 @@ function Navbar() {
       element.style.boxShadow = "none";
       element.style.background = "white";
 
+      // The preview uses transform: scale(...) to fit on screen.
+      // Disable it during PDF generation so link rectangles align.
+      if (contentElement) {
+        contentElement.style.transform = "none";
+        contentElement.style.transformOrigin = "top left";
+        contentElement.style.fontSize = "14px";
+      }
+
       // ===== AUTO FONT RESIZE =====
       const targetHeight = 1120;
 
-      const computedStyle = window.getComputedStyle(element);
+      const resizeTarget = contentElement || element;
+      const computedStyle = window.getComputedStyle(resizeTarget);
       let baseFont = parseFloat(computedStyle.fontSize);
 
       let currentHeight = element.scrollHeight;
 
       while (currentHeight < targetHeight * 0.95) {
         baseFont += 1;
-        element.style.fontSize = `${baseFont}px`;
+        resizeTarget.style.fontSize = `${baseFont}px`;
         currentHeight = element.scrollHeight;
         if (baseFont > 24) break;
       }
 
       while (currentHeight > targetHeight) {
         baseFont -= 0.5;
-        element.style.fontSize = `${baseFont}px`;
+        resizeTarget.style.fontSize = `${baseFont}px`;
         currentHeight = element.scrollHeight;
         if (baseFont < 10) break;
       }
+
+      // ===== Capture link rectangles in the EXACT capture layout =====
+      // IMPORTANT: must happen BEFORE html2canvas and BEFORE restoring styles.
+      const captureElementRect = element.getBoundingClientRect();
+      const captureWidth = element.offsetWidth || captureElementRect.width;
+      const captureHeight = element.offsetHeight || captureElementRect.height;
+
+      const linkRects = Array.from(element.querySelectorAll("a"))
+        .flatMap((a) => {
+          const rects = Array.from(a.getClientRects());
+          if (rects.length === 0) return [];
+          return rects.map((r) => ({
+            href: a.href,
+            x: r.left - captureElementRect.left,
+            y: r.top - captureElementRect.top,
+            w: r.width,
+            h: r.height,
+          }));
+        })
+        .filter((r) => r.w > 0 && r.h > 0);
 
       // ===== Capture canvas =====
       const canvas = await html2canvas(element, {
@@ -61,6 +99,9 @@ function Navbar() {
 
       // ===== Restore styles =====
       Object.assign(element.style, originalStyles);
+      if (contentElement && originalContentStyles) {
+        Object.assign(contentElement.style, originalContentStyles);
+      }
 
       // ===== IMAGE COMPRESSION =====
       let quality = 0.8;
@@ -98,29 +139,15 @@ function Navbar() {
       pdf.addImage(imgData, "JPEG", x, y, imgWidth, imgHeight);
 
       // ======================================================
-      // ⭐ CLICKABLE LINKS (FINAL FIX)
+      // ⭐ CLICKABLE LINKS (aligned to captured layout)
       // ======================================================
-      const links = element.querySelectorAll("a");
-      const elementRect = element.getBoundingClientRect();
+      linkRects.forEach((r) => {
+        const pdfX = x + (r.x / captureWidth) * imgWidth;
+        const pdfY = y + (r.y / captureHeight) * imgHeight;
+        const pdfW = (r.w / captureWidth) * imgWidth;
+        const pdfH = (r.h / captureHeight) * imgHeight;
 
-      links.forEach((link) => {
-        const rect = link.getBoundingClientRect();
-
-        // Position relative to main element
-        const linkX = rect.left - elementRect.left;
-        const linkY = rect.top - elementRect.top;
-        const linkW = rect.width;
-        const linkH = rect.height;
-
-        // HTML → PDF conversion
-        const pdfX = x + (linkX / elementRect.width) * imgWidth;
-        const pdfY = y + (linkY / elementRect.height) * imgHeight;
-        const pdfW = (linkW / elementRect.width) * imgWidth;
-        const pdfH = (linkH / elementRect.height) * imgHeight;
-
-        pdf.link(pdfX, pdfY, pdfW, pdfH, {
-          url: link.href,
-        });
+        pdf.link(pdfX, pdfY, pdfW, pdfH, { url: r.href });
       });
 
       // ======================================================
